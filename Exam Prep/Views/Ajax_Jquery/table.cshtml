@@ -1,0 +1,56 @@
+﻿@model IEnumerable<Exam_Prep.Models.customer>
+@{
+    ViewBag.Title = "table";
+}
+
+<h2>table</h2>
+
+<table class="table table-borderless table-striped table-dark">
+    <thead style="background-color:black;color:white">
+        <tr>
+            <th colspan="3" class="text-center">
+                Coporate Relationship
+            </th>
+        </tr>
+    </thead>
+    <tbody id="table-body">
+        <tr>
+            <td colspan="3" class="text-center">
+                <span class="text-info"> Luis Goncalves is a Customer </span>
+                <span class="text-dark"> who is managed by Perk Margret  </span>
+                <span class="text-info"> who reports to andres@chinookcorp.com </span>
+            </td>
+        </tr>
+    </tbody>
+</table>
+@section Scripts {
+
+    <script type="text/javascript">
+
+        //------------- Question 1--------------------\\
+        $(document).ready(function () {
+            $.ajax({
+                url: "@Url.Action("Question1","SectionA")",
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data)
+                {
+                    /* Continue here */
+                    $("#table-body").empty;
+
+                    $.each(data, function (i, value) {
+                        $("#table-body").append("<tr><td colspan='3' class='text - center' id=" + i + "" > + value + "</td>");
+                        i++;
+                    }
+
+                   /** End Question 1 **/ /*** Total 5 MARKS ****/
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        });
+        //-------------------------------------\\
+    </script>
+}

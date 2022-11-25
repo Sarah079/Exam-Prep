@@ -1,0 +1,594 @@
+﻿@model PagedList.IPagedList<Exam_Prep.Models.product>
+@using PagedList.Mvc;
+@{
+    ViewBag.Title = "Json";
+}
+<h2>@ViewBag.Title.</h2>
+
+@*
+    notation ----------- Key: value
+    all inside {} is part of one object
+    Json standardises info between languages
+*@
+
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+<style>
+    .form-control {
+        display: inline !important;
+    }
+</style>
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Products</h2>
+
+@using (Html.BeginForm("Index", "Products", FormMethod.Get))
+{
+    <div class="container-fluid">
+        <div class="row">
+            <div class="form-group col-lg-12">
+                @Html.TextBox("SearchString", ViewBag.CurrentFilter as string, new { @class = "form-control", placeholder = "Enter Product Name..." })
+                <button type="submit" class="btn btn-primary">Search</button>
+                <button type="button" class="btn btn-info" onclick="window.location.href = '@Url.Action("Create", "Products")'">Create</button>
+            </div>
+        </div>
+
+    </div>
+}
+
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="form-group col-lg-12">
+            <input type="text" id="productIdCheck" class="form-control" placeholder="Enter Product Id" />
+            <button type="submit" class="btn btn-primary" onclick="getQuantity()">Search</button>
+        </div>
+    </div>
+
+</div>
+
+<table class="table">
+    <tr>
+        <th>
+            Name
+        </th>
+        <th>
+            Year
+        </th>
+        <th>
+            Price
+        </th>
+        <th>
+            Brand
+        </th>
+        <th>
+            Category
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.product_name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.model_year)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.list_price)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.brand.brand_name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.category.category_name)
+            </td>
+            <td>
+                <button class="btn btn-primary" onclick="getProductEdit(@item.product_id)" type="button"> Edit</button>
+                <button class="btn btn-info" onclick="getProductDetails(@item.product_id)"> Details</button>
+                <button class="btn btn-danger" onclick="getProductDelete(@item.product_id)"> Delete</button>
+            </td>
+        </tr>
+    }
+
+</table>
+<br />
+Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+
+@Html.PagedListPager(Model, page => Url.Action("Index",
+new { page, currentFilter = ViewBag.CurrentFilter }))
+
+
+
+<!--Modal Section-->
+<!-- Edit Modal -->
+<div class="modal fade" id="modalEdit" tabindex="-1" role="dialog" aria-labelledby="modalEditLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-12" style="width: 72% !important;">
+                            <div class="form-horizontal ">
+                                <div class="form-group">
+                                    <label class="control-label col-md-2">Name</label><br />
+                                    <div class="col-md-10">
+                                        <input placeholder="Product Name" type="text" class="form-control" id="edit_product_name" />
+                                        <br />
+                                        <span id="nameRequired" hidden class="text-danger">Product Name Field is Required !!!!! </span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="control-label col-md-2">Brand</label><br />
+                                    <div class="col-md-10">
+                                        <select class="form-control" id="edit_brand_id"></select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="control-label col-md-2">Category</label><br />
+                                    <div class="col-md-10">
+                                        <select class="form-control" id="edit_category_id"></select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="control-label col-md-2">Year</label><br />
+                                    <div class="col-md-10">
+                                        <input placeholder="2022" type="text" class="form-control" id="edit_model_year" />
+                                        <br />
+                                        <span id="yearRequired" hidden class="text-danger">Model Year Field is Required !!!!! </span>
+                                        <span id="yearInvalid" hidden class="text-danger">Model Year is Invalid !!!!! </span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="control-label col-md-2">List Price</label><br />
+                                    <div class="col-md-10">
+                                        <input placeholder="2500" type="text" class="form-control" id="edit_list_price" /><br />
+                                        <span id="priceRequired" hidden class="text-danger">Price Field is Required !!!!! </span>
+                                        <span id="priceInvalid" hidden class="text-danger">Price is Invalid !!!!! </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="postProductEdit()">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="modalDetails" tabindex="-1" role="dialog" aria-labelledby="modalDetailsLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+
+                <h2>Details</h2>
+                <div>
+                    <hr />
+                    <dl class="dl-horizontal">
+                        <dt>
+                            Name
+                        </dt>
+
+                        <dd>
+                            <span id="detailsName"></span>
+                        </dd>
+
+                        <dt>
+                            Year
+                        </dt>
+
+                        <dd>
+                            <span id="detailsYear"></span>
+                        </dd>
+
+                        <dt>
+                            Price
+                        </dt>
+
+                        <dd>
+                            <span id="detailsPrice"></span>
+                        </dd>
+
+                        <dt>
+                            Brand
+                        </dt>
+
+                        <dd>
+                            <span id="detailsBrand"></span>
+                        </dd>
+
+                        <dt>
+                            Category
+                        </dt>
+
+                        <dd>
+                            <span id="detailsCategory"></span>
+                        </dd>
+
+                    </dl>
+                </div>
+                <table id="tblSimpleAttribute" class="table table-bordered table-striped table-responsive table-hover">
+                    <thead>
+                        <tr>
+                            <th align="left" class="productth col-md-6">Store</th>
+                            <th align="left" class="productth col-md-6">Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Delete Modal-->
+<div class="modal fade" id="modalDelete" tabindex="-1" role="dialog" aria-labelledby="modalDelete" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h2>Confirm Delete </h2>
+                <h3> Are you sure you want to Delete this ?</h3>
+                <div>
+                    <hr />
+                    <dl class="dl-horizontal">
+                        <dt>
+                            Name
+                        </dt>
+
+                        <dd>
+                            <span id="deleteName"></span>
+                        </dd>
+
+                        <dt>
+                            Year
+                        </dt>
+
+                        <dd>
+                            <span id="deleteYear"></span>
+                        </dd>
+
+                        <dt>
+                            Price
+                        </dt>
+
+                        <dd>
+                            <span id="deletePrice"></span>
+                        </dd>
+
+                        <dt>
+                            Brand
+                        </dt>
+
+                        <dd>
+                            <span id="deleteBrand"></span>
+                        </dd>
+
+                        <dt>
+                            Category
+                        </dt>
+
+                        <dd>
+                            <span id="deleteCategory"></span>
+                        </dd>
+
+                    </dl>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--Script Section-->
+@section Scripts {
+
+    <script type="text/javascript"> 
+        //Notes - Edit - Details - Delete
+
+        //------------------- extra helped --------
+        function getQuantity() {
+            var Id = $("#productIdCheck").val(); // check if the refenced ID has a value 
+            if (Id == "") {
+                alert("Please enter a valid Id"); //helps to check where things are working/not working is by adding in alerts to see where functions are stopping
+                return;
+            }
+            //sending off to backend 
+            $.ajax({ 
+                url: '/Products/GetQuantity', //calling a JsonResult
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: { "id": parseInt(Id) }, //parseInt send the data 
+                success: function (data) {
+                    alert(data.quantity)
+                },
+                error: function (error) {
+                    console.log(error); //console logs 
+                }
+            })
+
+        }
+
+
+        //-------------EDIT--------------------\\
+        var EditingProduct = 0;
+        function getProductEdit(productId) {
+            EditingProduct = 0;
+            EditingProduct = productId;
+            //Ajax Fetch data
+            $.ajax({
+                url: '/Products/Edit',
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: { "id": productId },
+                success: function (data) {
+                    //console.log(data);
+                    $('#editTitle').text("Edit Product - " + data.product.product_name);
+                    $('#edit_product_name').val(data.product.product_name);
+                    //Appending to brands
+                    var brandHTML = "";
+                    for (i = 0; i < data.product.brands.length; i++) {
+                        brandHTML += "<option value='" + data.product.brands[i].brand_id + "'>" + data.product.brands[i].brand_name + "</option>";
+                    }
+                    $('#edit_brand_id').append(brandHTML);
+                    //Appending to brands
+                    var categoryHTML = "";
+                    for (i = 0; i < data.product.categories.length; i++) {
+                        categoryHTML += "<option value='" + data.product.categories[i].category_id + "'>" + data.product.categories[i].category_name + "</option>";
+                    }
+                    $('#edit_brand_id').append(categoryHTML);
+
+                    //Apply selected brand
+                    $("#edit_brand_id").val(data.product.brand_id).attr("selected", "selected");
+
+                    //Apply selected Category
+                    $("#edit_category_id").val(data.product.category_id).attr("selected", "selected");
+
+                    $('#edit_category_id').append(categoryHTML);
+                    $('#edit_model_year').val(data.product.model_year);
+                    $('#edit_list_price').val(data.product.list_price);
+                    $('#modalEdit').modal('show');
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        };
+        function postProductEdit() {
+
+            //Define Model
+            product = new class {
+                product_id = EditingProduct; product_name = $('#edit_product_name').val(); brand_id = parseInt($('#edit_brand_id').val());
+                category_id = parseInt($("#edit_category_id").val()); model_year = $('#edit_model_year').val(); list_price = 0
+            };
+
+            //Check the name field is not empty
+            if (product.product_name == "") {
+                $("#nameRequired").attr("hidden", false);
+                return;
+            }
+            $("#nameRequired").attr("hidden", true);
+
+
+            //Check the year field is not empty
+            if (product.model_year != "") {
+                $("#yearRequired").attr("hidden", true);
+                //Check the year field is a number
+                if (isNaN(product.model_year) == true) {
+                    $("#yearInvalid").attr("hidden", false);
+                    return;
+                }
+                else if (isNaN(product.model_year) == false && product.model_year.length > 4 || product.model_year.length < 4) {
+                    //If it is a number check the length
+                    $("#yearInvalid").attr("hidden", false);
+                    return;
+                }
+            }
+            else {
+                $("#yearInvalid").attr("hidden", true);
+                $("#yearRequired").attr("hidden", false);
+                return;
+            }
+            $("#yearInvalid").attr("hidden", true);
+            $("#yearRequired").attr("hidden", true);
+
+
+            //check the list price is not empty
+            if ($('#edit_list_price').val() != "") {
+                $("#priceRequired").attr("hidden", true);
+                //check if it is a number
+                if (isNaN($('#edit_list_price').val()) == true) {
+                    $("#priceInvalid").attr("hidden", false);
+                    return;
+                }
+            }
+            else {
+                $("#priceInvalid").attr("hidden", true);
+                $("#priceRequired").attr("hidden", false);
+                return;
+            }
+            $("#priceInvalid").attr("hidden", true);
+            $("#priceRequired").attr("hidden", true);
+
+
+
+            //Assign LISTPRICE / YEAR AS A CONVERTED Number
+            product.list_price = parseFloat($('#edit_list_price').val());
+            product.model_year = parseInt($('#edit_model_year').val());
+
+            //Ajax Send Data
+            $.ajax({
+                url: '/Products/Edit',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: JSON.stringify({ "product": product }),
+                success: function (data) {
+                    if (data.status == "200 OK") {
+                        alert("Success");
+                        location.reload();
+                    }
+                    else {
+                        alert(data.status);
+                    }
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        };
+       
+
+        //-------------Details--------------------\\
+        function getProductDetails(productId) {
+            $.ajax({
+                url: '/Products/Details/',
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: { "id": productId },
+                success: function (data) {
+
+                    //Clear any existing Data
+                    $('#detailsName').text('');
+                    $('#detailsYear').text('');
+                    $('#detailsPrice').text('');
+                    $('#detailsBrand').text('');
+                    $('#detailsCategory').text('');
+
+                    //Assign New Data
+                    $('#detailsName').text(data.product.brand_name);
+                    $('#detailsYear').text(data.product.category_name);
+                    $('#detailsPrice').text(data.product.list_price);
+                    $('#detailsBrand').text(data.product.model_year);
+                    $('#detailsCategory').text(data.product.product_name);
+
+
+                    //Assign Table Data
+                    $('#tblSimpleAttribute tbody').empty();
+                    var rows = ''
+                    $.each(data.product.storeQuantities, function (i, item) {
+                        let showQuantity = item.quantity;
+                        let Quantity = "";
+                        if (showQuantity == "0") {
+                            Quantity = "<span class='text-danger'> Out of Stock </span>"
+                        }
+                        else {
+                            Quantity = item.quantity
+                        }
+                        var line = "<tr>" + "<td>" + item.store_name + "</td>" + "<td>" + item.quantity + "</td>" + "</tr > ";
+                        rows += line;
+                    });
+                    $('#tblSimpleAttribute tbody').append(rows);
+
+
+                    //Show Dettails Modal
+                    $('#modalDetails').modal('show');
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+
+
+
+        //-------------Delete--------------------\\
+        var DeleteProduct = 0;
+        function getProductDelete(productId) {
+            DeleteProduct = 0;
+            DeleteProduct = productId;
+            $.ajax({
+                url: '/Products/Delete',
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: { "id": productId },
+                success: function (data) {
+
+                    //Clear any existing Data
+                    $('#deleteName').text('');
+                    $('#deleteYear').text('');
+                    $('#deletePrice').text('');
+                    $('#deleteBrand').text('');
+                    $('#deleteCategory').text('');
+
+                    //Assign New Data
+                    $('#deleteName').text(data.product.brand_name);
+                    $('#deleteYear').text(data.product.category_name);
+                    $('#deletePrice').text(data.product.list_price);
+                    $('#deleteBrand').text(data.product.model_year);
+                    $('#deleteCategory').text(data.product.product_name);
+
+                    //Show Dettails Modal
+                    $('#modalDelete').modal('show');
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+
+        }
+        function confirmDelete() {
+            $.ajax({
+                url: '/Products/DeleteConfirmed',
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                data: { "id": DeleteProduct },
+                success: function (data) {
+                    if (data.status == "200 OK") {
+                        alert("Success");
+                        location.reload();
+                    }
+                    else {
+                        alert(data.status);
+                    }
+                },
+                error: function (error) {
+                    console.log(error);
+                }
+            });
+        }
+       
+        
+    </script>
+}

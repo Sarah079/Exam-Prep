@@ -1,0 +1,118 @@
+﻿@{
+    ViewBag.Title = "Chart";
+}
+<h2>My bar chart</h2>
+<h3>using employees data</h3>
+@* We are gettin getting the amount of sales per staff  *@
+
+<<div class="jumbotron">
+    <br />
+    <button class="btn btn-primary" onclick="printpdf()" id="btnprint">Download Chart</button>
+    <p></p>
+    <div id="canvas">
+        <canvas id="chart" style="display: block; width: 500px !important; height: 500px !important;"></canvas>
+    </div>
+</div>
+
+
+@* In Json object, key, value *@
+@section Scripts{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.5/jspdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+    @*
+        example using serializer
+        var labels = @Json.Serialize(ViewBag.Regions);
+
+        you would then be passing through viewbags in controller
+    *@
+
+    <script>
+        //comment = background colours are in controller example
+        $(document).ready(function () {
+            var chart = $('#chart');
+            $.ajax({
+                url: '/Home/Chart',
+                type: 'GET',
+                success: function (chartdata) {
+                    let region = [];
+                    let rev_value = [];
+                    //let labels = [];
+                    //let values = [];
+                    //let backcolor = [];
+                    //let bordercolor = [];
+                    try {
+                        chartdata.map((item) => {
+                            rev_value.push(item.total_Sales);
+                            region.push(item.employee);
+                            //labels.push(item.employee);
+                            //values.push(item.total_Sales);
+                            //backcolor.push(item.backgroundColor);
+                            //bordercolor.push(item.borderColor);
+                        });
+                        var myChart = new Chart(chart, {
+                            type: 'bar',
+                            data: {
+                                labels: [...region],
+                                datasets: [{
+                                    label: 'Rand Value of Sales',
+                                    data: [...rev_value],
+                                    backgroundColor: [ //[...backcolor]
+                                        'rgba(255, 99, 132, 0.2)',
+                                        'rgba(54, 162, 235, 0.2)',
+                                        'rgba(255, 206, 86, 0.2)',
+                                        'rgba(75, 192, 192, 0.2)',
+                                        'rgba(153, 102, 255, 0.2)',
+                                        'rgba(255, 159, 64, 0.2)',
+                                        'rgba(121, 194, 50, 0.2)',
+                                        'rgba(150, 127,23, 0.2)',
+                                        'rgba(188, 113, 12, 0.2)',
+                                        'rgba(0, 0, 88, 0.2)',
+                                    ],
+                                    borderColor: [ //[...bordercolor]
+                                        'rgba(255, 99, 132, 1)',
+                                        'rgba(54, 162, 235, 1)',
+                                        'rgba(255, 206, 86, 1)',
+                                        'rgba(75, 192, 192, 1)',
+                                        'rgba(153, 102, 255, 1)',
+                                        'rgba(255, 159, 64, 1)',
+                                        'rgba(255, 159, 64, 1)',
+                                        'rgba(255, 159, 64, 1)',
+                                        'rgba(255, 159, 64, 1)',
+                                        'rgba(255, 159, 64, 1)',
+                                    ],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { position: 'top' },
+                                },
+
+                            }
+                        });
+                    }
+                    catch (error) {
+                        console.log(error)
+                    }
+
+                    console.log(chartdata);
+                }
+            });
+        });
+
+        function printpdf() {
+            html2canvas(document.getElementById("canvas"), {
+                onrendered: function (canvas) {
+                    var img = canvas.toDataURL(); //image data of canvas
+                    var doc = new jsPDF();
+                    doc.text(15, 15, "Employee Data");
+                    doc.addImage(canvas, 'JPEG', 10, 10, 280, 200);
+                    doc.save('EmployeeSales.pdf');
+                }
+            });
+        }
+
+    </script>
+
+}
